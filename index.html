@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mass Count">
+<meta name="theme-color" content="#0f1923">
+<title>Mass Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Source+Sans+3:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #0f1923;
+  --surface:   #172130;
+  --surface2:  #1e2d3d;
+  --border:    rgba(180,155,90,0.18);
+  --gold:      #c9a84c;
+  --gold-lt:   #e2c97e;
+  --gold-dk:   #7a6228;
+  --text:      #e8e0d0;
+  --text-dim:  #8a9aaa;
+  --green:     #4caf87;
+  --red:       #e07070;
+  --r:         14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column}
+
+/* ── Header ── */
+.hdr{
+  flex-shrink:0;
+  background:linear-gradient(160deg,#172130 0%,#0f1923 100%);
+  border-bottom:1px solid var(--border);
+  padding:44px 20px 16px;
+  text-align:center;
+  position:relative;
+}
+.hdr-cross{font-size:18px;color:var(--gold);opacity:.6;letter-spacing:12px;display:block;margin-bottom:6px}
+.hdr h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--gold-lt);letter-spacing:1.5px}
+.hdr p{font-size:11px;color:var(--text-dim);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+
+/* ── Nav ── */
+.nav{
+  flex-shrink:0;
+  display:flex;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+}
+.nav-btn{
+  flex:1;padding:13px 4px;
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--text-dim);font-family:'Source Sans 3',sans-serif;
+  font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;
+}
+.nav-btn.on{color:var(--gold-lt);border-bottom-color:var(--gold)}
+
+/* ── Scrollable body ── */
+.screens{flex:1;overflow:hidden;position:relative}
+.screen{
+  position:absolute;inset:0;overflow-y:auto;
+  padding:22px 18px 40px;
+  display:none;
+  animation:fadeUp .25s ease;
+}
+.screen.on{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Section label ── */
+.lbl{
+  font-family:'Cormorant Garamond',serif;
+  font-size:13px;font-weight:600;letter-spacing:2px;text-transform:uppercase;
+  color:var(--gold);border-bottom:1px solid var(--border);
+  padding-bottom:8px;margin-bottom:16px;
+}
+
+/* ── Mass selector cards ── */
+.mass-grid{display:flex;flex-direction:column;gap:9px;margin-bottom:20px}
+.mcard{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;cursor:pointer;transition:all .18s;
+}
+.mcard.on{border-color:var(--gold);background:rgba(201,168,76,.07);box-shadow:0 0 0 1px var(--gold-dk)}
+.mcard-ico{width:38px;height:38px;border-radius:50%;background:rgba(201,168,76,.08);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.mcard.on .mcard-ico{background:rgba(201,168,76,.18)}
+.mcard-info{flex:1}
+.mcard-day{font-size:10px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--text-dim)}
+.mcard-time{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--text);margin-top:1px}
+.mcard-chk{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--gold);transition:all .18s;flex-shrink:0}
+.mcard.on .mcard-chk{background:var(--gold);border-color:var(--gold);color:var(--bg)}
+
+/* ── Field ── */
+.field{margin-bottom:16px}
+.field-lbl{display:block;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px}
+.field-inp{
+  width:100%;background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);color:var(--text);
+  font-family:'Source Sans 3',sans-serif;font-size:16px;
+  padding:13px 15px;outline:none;transition:border-color .2s;
+  -webkit-appearance:none;appearance:none;
+}
+.field-inp:focus{border-color:var(--gold-dk)}
+.field-inp::placeholder{color:var(--text-dim)}
+
+/* ── Counter ── */
+.counter-lbl{display:block;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:7px}
+.counter{
+  display:flex;align-items:center;
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:14px;
+}
+.cbtn{
+  width:58px;height:58px;flex-shrink:0;
+  background:none;border:none;color:var(--gold);
+  font-size:28px;font-weight:300;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.cbtn:active{background:rgba(201,168,76,.1)}
+.cinp{
+  flex:1;background:none;border:none;outline:none;
+  font-family:'Cormorant Garamond',serif;font-size:32px;
+  color:var(--text);text-align:center;padding:0;
+  -moz-appearance:textfield;
+}
+.cinp::-webkit-outer-spin-button,.cinp::-webkit-inner-spin-button{-webkit-appearance:none}
+
+/* ── Total bar ── */
+.total{
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(201,168,76,.06);border:1.5px solid rgba(201,168,76,.2);
+  border-radius:var(--r);padding:13px 18px;margin-bottom:22px;
+}
+.total-lbl{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold)}
+.total-val{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--gold-lt)}
+
+/* ── Submit button ── */
+.sbtn{
+  width:100%;padding:17px;
+  background:linear-gradient(135deg,var(--gold-dk),var(--gold));
+  border:none;border-radius:var(--r);
+  font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;
+  letter-spacing:2px;color:var(--bg);cursor:pointer;
+  transition:all .2s;text-transform:uppercase;
+}
+.sbtn:active{transform:scale(.98)}
+.sbtn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+
+/* ── Records ── */
+.rec-filters{display:flex;gap:8px;margin-bottom:16px}
+.rfbtn{
+  flex:1;padding:9px;background:var(--surface);
+  border:1.5px solid var(--border);border-radius:9px;
+  color:var(--text-dim);font-size:10px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all .2s;
+}
+.rfbtn.on{border-color:var(--gold);color:var(--gold-lt);background:rgba(201,168,76,.07)}
+.rec-list{display:flex;flex-direction:column;gap:11px}
+.rcard{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:15px 16px;animation:fadeUp .2s ease}
+.rcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.rcard-title{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--gold-lt)}
+.rcard-date{font-size:11px;color:var(--text-dim);margin-top:2px}
+.rbadge{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:20px}
+.rbadge-w{background:rgba(201,168,76,.12);color:var(--gold)}
+.rbadge-s{background:rgba(76,175,135,.12);color:var(--green)}
+.rcard-stats{display:flex;gap:0}
+.rstat{flex:1;text-align:center;padding:4px 0}
+.rstat+.rstat{border-left:1px solid var(--border)}
+.rstat-val{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text)}
+.rstat-lbl{font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--text-dim)}
+.rstat.hi .rstat-val{color:var(--gold-lt)}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:52px 24px;color:var(--text-dim)}
+.empty-ico{font-size:44px;opacity:.3;margin-bottom:14px}
+.empty p{font-size:14px;line-height:1.6}
+
+/* ── Settings ── */
+.sblock{background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:18px}
+.sblock h3{font-family:'Cormorant Garamond',serif;font-size:15px;color:var(--gold);margin-bottom:12px;letter-spacing:.5px}
+.sblock p{font-size:13px;color:var(--text-dim);line-height:1.65;margin-bottom:12px}
+.sblock ol{padding-left:18px;font-size:13px;color:var(--text-dim);line-height:1.8}
+.sblock ol li{margin-bottom:2px}
+.sblock strong{color:var(--text)}
+.mini-btn{
+  background:var(--surface2);border:1.5px solid var(--gold-dk);
+  border-radius:9px;color:var(--gold);
+  font-family:'Source Sans 3',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;padding:9px 18px;cursor:pointer;transition:all .2s;
+}
+.mini-btn:hover{background:rgba(201,168,76,.1)}
+.script-box{
+  width:100%;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:10px;color:var(--text-dim);
+  font-family:monospace;font-size:11px;line-height:1.55;
+  padding:12px;resize:none;outline:none;margin-bottom:12px;
+}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;left:50%;
+  transform:translateX(-50%) translateY(12px);
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:30px;padding:11px 22px;
+  font-size:13px;color:var(--text);
+  opacity:0;transition:all .28s;pointer-events:none;
+  white-space:nowrap;z-index:999;max-width:88vw;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.ok{border-color:var(--green);color:var(--green)}
+.toast.err{border-color:var(--red);color:var(--red)}
+
+/* ── Spinner ── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(201,168,76,.25);border-top-color:var(--gold);border-radius:50%;animation:rot .7s linear infinite;vertical-align:middle;margin-right:7px}
+@keyframes rot{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <span class="hdr-cross">✦ ✦ ✦</span>
+  <h1>Mass Attendance</h1>
+  <p>Parish Record Keeper</p>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn on" onclick="go('weekend')">Weekend</button>
+  <button class="nav-btn"    onclick="go('special')">Special</button>
+  <button class="nav-btn"    onclick="go('records')">Records</button>
+  <button class="nav-btn"    onclick="go('settings')">Settings</button>
+</nav>
+
+<div class="screens">
+
+  <!-- ── WEEKEND ── -->
+  <div class="screen on" id="s-weekend">
+    <div class="lbl">Select Mass</div>
+    <div class="mass-grid">
+      <div class="mcard" id="mc-sat4"    onclick="pickMass('Saturday','4:00 PM','sat4')">
+        <div class="mcard-ico">🌅</div>
+        <div class="mcard-info"><div class="mcard-day">Saturday</div><div class="mcard-time">4:00 PM</div></div>
+        <div class="mcard-chk">✓</div>
+      </div>
+      <div class="mcard" id="mc-sun830"  onclick="pickMass('Sunday','8:30 AM','sun830')">
+        <div class="mcard-ico">🌄</div>
+        <div class="mcard-info"><div class="mcard-day">Sunday</div><div class="mcard-time">8:30 AM</div></div>
+        <div class="mcard-chk">✓</div>
+      </div>
+      <div class="mcard" id="mc-sun1030" onclick="pickMass('Sunday','10:30 AM','sun1030')">
+        <div class="mcard-ico">☀️</div>
+        <div class="mcard-info"><div class="mcard-day">Sunday</div><div class="mcard-time">10:30 AM</div></div>
+        <div class="mcard-chk">✓</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-lbl">Date</label>
+      <input class="field-inp" type="date" id="w-date">
+    </div>
+
+    <label class="counter-lbl">Adults</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('w-adults',-1)">−</button>
+      <input  class="cinp" type="number" id="w-adults" min="0" placeholder="0" oninput="calcTotal('w')">
+      <button class="cbtn" onclick="adj('w-adults',1)">+</button>
+    </div>
+
+    <label class="counter-lbl">Children</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('w-children',-1)">−</button>
+      <input  class="cinp" type="number" id="w-children" min="0" placeholder="0" oninput="calcTotal('w')">
+      <button class="cbtn" onclick="adj('w-children',1)">+</button>
+    </div>
+
+    <div class="total">
+      <span class="total-lbl">Total</span>
+      <span class="total-val" id="w-total">—</span>
+    </div>
+
+    <button class="sbtn" id="w-sbtn" onclick="submitWeekend()">Record Attendance</button>
+  </div>
+
+  <!-- ── SPECIAL ── -->
+  <div class="screen" id="s-special">
+    <div class="lbl">Special Mass</div>
+
+    <div class="field">
+      <label class="field-lbl">Mass Name / Type</label>
+      <input class="field-inp" type="text" id="sp-name" placeholder="e.g. Easter Vigil, Christmas Day…">
+    </div>
+    <div class="field">
+      <label class="field-lbl">Date</label>
+      <input class="field-inp" type="date" id="sp-date">
+    </div>
+    <div class="field">
+      <label class="field-lbl">Time</label>
+      <input class="field-inp" type="time" id="sp-time">
+    </div>
+
+    <label class="counter-lbl">Adults</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('sp-adults',-1)">−</button>
+      <input  class="cinp" type="number" id="sp-adults" min="0" placeholder="0" oninput="calcTotal('sp')">
+      <button class="cbtn" onclick="adj('sp-adults',1)">+</button>
+    </div>
+
+    <label class="counter-lbl">Children</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('sp-children',-1)">−</button>
+      <input  class="cinp" type="number" id="sp-children" min="0" placeholder="0" oninput="calcTotal('sp')">
+      <button class="cbtn" onclick="adj('sp-children',1)">+</button>
+    </div>
+
+    <div class="total">
+      <span class="total-lbl">Total</span>
+      <span class="total-val" id="sp-total">—</span>
+    </div>
+
+    <button class="sbtn" id="sp-sbtn" onclick="submitSpecial()">Record Attendance</button>
+  </div>
+
+  <!-- ── RECORDS ── -->
+  <div class="screen" id="s-records">
+    <div class="lbl">Past Records</div>
+    <div class="rec-filters">
+      <button class="rfbtn on" id="rf-all"     onclick="filter('all')">All</button>
+      <button class="rfbtn"    id="rf-weekend"  onclick="filter('weekend')">Weekend</button>
+      <button class="rfbtn"    id="rf-special"  onclick="filter('special')">Special</button>
+    </div>
+    <div class="rec-list" id="rec-list"></div>
+  </div>
+
+  <!-- ── SETTINGS ── -->
+  <div class="screen" id="s-settings">
+    <div class="lbl">Setup</div>
+
+    <div class="sblock">
+      <h3>Google Sheets Connection</h3>
+      <p>Paste your Google Apps Script Web App URL below. Every volunteer's phone needs this URL entered once.</p>
+      <div class="field">
+        <label class="field-lbl">Web App URL</label>
+        <input class="field-inp" type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/…/exec" style="font-size:13px">
+      </div>
+      <button class="mini-btn" onclick="saveUrl()">Save URL</button>
+    </div>
+
+    <div class="sblock">
+      <h3>How to get the URL</h3>
+      <ol>
+        <li>Open your Google Sheet</li>
+        <li>Click <strong>Extensions → Apps Script</strong></li>
+        <li>Delete any existing code and paste the script below</li>
+        <li>Click <strong>Save</strong> (floppy disk icon)</li>
+        <li>Click <strong>Deploy → New deployment</strong></li>
+        <li>Click the gear ⚙ icon and choose <strong>Web app</strong></li>
+        <li>Set <strong>Execute as: Me</strong> and <strong>Who has access: Anyone</strong></li>
+        <li>Click <strong>Deploy</strong> and authorize when prompted</li>
+        <li>Copy the Web App URL and paste it above</li>
+      </ol>
+    </div>
+
+    <div class="sblock">
+      <h3>Apps Script Code</h3>
+      <textarea class="script-box" id="script-box" rows="16" readonly></textarea>
+      <button class="mini-btn" onclick="copyScript()">Copy Script</button>
+    </div>
+
+    <div class="sblock">
+      <h3>Install on Your Phone</h3>
+      <p><strong>iPhone (Safari):</strong> Tap the Share icon, then "Add to Home Screen".</p>
+      <p style="margin-top:8px"><strong>Android (Chrome):</strong> Tap the menu ⋮, then "Add to Home screen".</p>
+    </div>
+  </div>
+
+</div><!-- /screens -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─────────────────────────────────────────────
+// Apps Script — written into the textarea
+// ─────────────────────────────────────────────
+const SCRIPT = `function doPost(e) {
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+
+    // Parse incoming data (supports JSON body or form-encoded)
+    var raw = e.postData ? e.postData.contents : '';
+    var d;
+    if (raw.indexOf('payload=') === 0) {
+      d = JSON.parse(decodeURIComponent(raw.slice(8).replace(/\\+/g,' ')));
+    } else {
+      d = JSON.parse(raw);
+    }
+
+    // Create header row if sheet is empty
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(['Date','Day','Time','Mass','Adults','Children','Total','Recorded At']);
+      sheet.getRange(1,1,1,8).setFontWeight('bold').setBackground('#0f1923').setFontColor('#c9a84c');
+      sheet.setFrozenRows(1);
+    }
+
+    // Insert new data at row 2 so newest is always on top
+    sheet.insertRowAfter(1);
+    sheet.getRange(2,1,1,8).setValues([[
+      d.date, d.day, d.time, d.massType,
+      Number(d.adults), Number(d.children), Number(d.total),
+      new Date().toLocaleString()
+    ]]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({status:'ok'}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({status:'error',msg:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({status:'ready'}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+
+document.getElementById('script-box').value = SCRIPT;
+
+// ─────────────────────────────────────────────
+// State
+// ─────────────────────────────────────────────
+const REC_KEY = 'massrec2';
+const URL_KEY = 'massurl2';
+
+let records   = JSON.parse(localStorage.getItem(REC_KEY) || '[]');
+let sheetsUrl = localStorage.getItem(URL_KEY) || '';
+let selMass   = null;
+let curFilter = 'all';
+
+// ─────────────────────────────────────────────
+// Init
+// ─────────────────────────────────────────────
+document.getElementById('w-date').value  = nearestWeekend();
+document.getElementById('sp-date').value = today();
+document.getElementById('cfg-url').value = sheetsUrl;
+renderRecords();
+
+// ─────────────────────────────────────────────
+// Navigation
+// ─────────────────────────────────────────────
+function go(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
+  document.getElementById('s-' + name).classList.add('on');
+  const idx = ['weekend','special','records','settings'].indexOf(name);
+  document.querySelectorAll('.nav-btn')[idx].classList.add('on');
+  if (name === 'records')  renderRecords();
+  if (name === 'settings') document.getElementById('cfg-url').value = sheetsUrl;
+}
+
+// ─────────────────────────────────────────────
+// Mass card selection
+// ─────────────────────────────────────────────
+function pickMass(day, time, id) {
+  document.querySelectorAll('.mcard').forEach(c => c.classList.remove('on'));
+  document.getElementById('mc-' + id).classList.add('on');
+  selMass = { day, time };
+  // Auto-set the date to the matching upcoming day
+  document.getElementById('w-date').value = upcomingDate(day);
+}
+
+// ─────────────────────────────────────────────
+// Counter controls
+// ─────────────────────────────────────────────
+function adj(id, delta) {
+  const el  = document.getElementById(id);
+  const cur = parseInt(el.value) || 0;
+  const nxt = Math.max(0, cur + delta);
+  el.value  = nxt === 0 ? '' : nxt;
+  calcTotal(id.split('-')[0]);
+}
+
+function calcTotal(pfx) {
+  const a = parseInt(document.getElementById(pfx + '-adults').value)   || 0;
+  const c = parseInt(document.getElementById(pfx + '-children').value) || 0;
+  document.getElementById(pfx + '-total').textContent = (a + c) || '—';
+}
+
+// ─────────────────────────────────────────────
+// Submit — Weekend
+// ─────────────────────────────────────────────
+async function submitWeekend() {
+  if (!selMass) { toast('Please select a Mass time', 'err'); return; }
+  const date = document.getElementById('w-date').value;
+  if (!date)   { toast('Please select a date', 'err'); return; }
+
+  const adults   = parseInt(document.getElementById('w-adults').value)   || 0;
+  const children = parseInt(document.getElementById('w-children').value) || 0;
+
+  const rec = {
+    id: Date.now(), type: 'weekend',
+    date, day: selMass.day, time: selMass.time,
+    massType: selMass.day + ' ' + selMass.time,
+    adults, children, total: adults + children
+  };
+  await save(rec, 'w-sbtn');
+  // reset counts
+  document.getElementById('w-adults').value   = '';
+  document.getElementById('w-children').value = '';
+  document.getElementById('w-total').textContent = '—';
+}
+
+// ─────────────────────────────────────────────
+// Submit — Special
+// ─────────────────────────────────────────────
+async function submitSpecial() {
+  const name = document.getElementById('sp-name').value.trim();
+  const date = document.getElementById('sp-date').value;
+  const time = document.getElementById('sp-time').value;
+  if (!name) { toast('Please enter a Mass name', 'err'); return; }
+  if (!date) { toast('Please select a date', 'err'); return; }
+  if (!time) { toast('Please enter a time', 'err'); return; }
+
+  const adults   = parseInt(document.getElementById('sp-adults').value)   || 0;
+  const children = parseInt(document.getElementById('sp-children').value) || 0;
+
+  const rec = {
+    id: Date.now(), type: 'special',
+    date, day: dayName(date), time: fmtTime(time),
+    massType: name,
+    adults, children, total: adults + children
+  };
+  await save(rec, 'sp-sbtn');
+  document.getElementById('sp-name').value     = '';
+  document.getElementById('sp-adults').value   = '';
+  document.getElementById('sp-children').value = '';
+  document.getElementById('sp-total').textContent = '—';
+}
+
+// ─────────────────────────────────────────────
+// Core save — local + Google Sheets
+// ─────────────────────────────────────────────
+async function save(rec, btnId) {
+  const btn = document.getElementById(btnId);
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Saving…';
+
+  // Always save locally first
+  records.unshift(rec);
+  localStorage.setItem(REC_KEY, JSON.stringify(records));
+
+  // Send to Google Sheets if URL is configured
+  let sentOk = false;
+  if (sheetsUrl) {
+    try {
+      // Encode as form payload — most reliable with Google Apps Script
+      const body = 'payload=' + encodeURIComponent(JSON.stringify(rec));
+      const res = await fetch(sheetsUrl, {
+        method:  'POST',
+        mode:    'no-cors',   // required for cross-origin Apps Script
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body
+      });
+      // no-cors means we can't read the response, but if fetch didn't throw it went through
+      sentOk = true;
+    } catch (err) {
+      console.error('Sheets error:', err);
+    }
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Record Attendance';
+
+  if (!sheetsUrl) {
+    toast('✦ Saved locally (no Sheets URL set)', '');
+  } else if (sentOk) {
+    toast('✦ Saved & sent to Google Sheets', 'ok');
+  } else {
+    toast('Saved locally — could not reach Sheets', 'err');
+  }
+}
+
+// ─────────────────────────────────────────────
+// Records list
+// ─────────────────────────────────────────────
+function filter(type) {
+  curFilter = type;
+  document.querySelectorAll('.rfbtn').forEach(b => b.classList.remove('on'));
+  document.getElementById('rf-' + type).classList.add('on');
+  renderRecords();
+}
+
+function renderRecords() {
+  const list = document.getElementById('rec-list');
+  const data = curFilter === 'all' ? records : records.filter(r => r.type === curFilter);
+  if (!data.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-ico">📋</div><p>No records yet.<br>Submit your first attendance above.</p></div>`;
+    return;
+  }
+  list.innerHTML = data.map(r => `
+    <div class="rcard">
+      <div class="rcard-top">
+        <div>
+          <div class="rcard-title">${r.massType}</div>
+          <div class="rcard-date">${fmtDateDisp(r.date)} &middot; ${r.time}</div>
+        </div>
+        <span class="rbadge rbadge-${r.type === 'weekend' ? 'w' : 's'}">${r.type}</span>
+      </div>
+      <div class="rcard-stats">
+        <div class="rstat"><div class="rstat-val">${r.adults}</div><div class="rstat-lbl">Adults</div></div>
+        <div class="rstat"><div class="rstat-val">${r.children}</div><div class="rstat-lbl">Children</div></div>
+        <div class="rstat hi"><div class="rstat-val">${r.total}</div><div class="rstat-lbl">Total</div></div>
+      </div>
+    </div>`).join('');
+}
+
+// ─────────────────────────────────────────────
+// Settings
+// ─────────────────────────────────────────────
+function saveUrl() {
+  sheetsUrl = document.getElementById('cfg-url').value.trim();
+  localStorage.setItem(URL_KEY, sheetsUrl);
+  toast(sheetsUrl ? '✦ URL saved' : 'URL cleared', sheetsUrl ? 'ok' : '');
+}
+
+function copyScript() {
+  navigator.clipboard.writeText(SCRIPT)
+    .then(() => toast('✦ Script copied!', 'ok'))
+    .catch(() => toast('Select and copy manually', 'err'));
+}
+
+// ─────────────────────────────────────────────
+// Toast
+// ─────────────────────────────────────────────
+let _tt;
+function toast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(_tt);
+  _tt = setTimeout(() => el.className = 'toast', 3200);
+}
+
+// ─────────────────────────────────────────────
+// Date helpers
+// ─────────────────────────────────────────────
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtDate(d) {
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function nearestWeekend() {
+  const d   = new Date();
+  const dow = d.getDay(); // 0=Sun,6=Sat
+  if (dow === 0 || dow === 6) return fmtDate(d);
+  // next Saturday
+  const sat = new Date(d);
+  sat.setDate(d.getDate() + (6 - dow));
+  return fmtDate(sat);
+}
+function upcomingDate(dayName) {
+  const target = dayName === 'Saturday' ? 6 : 0;
+  const d = new Date();
+  const dow = d.getDay();
+  let diff = target - dow;
+  if (diff < 0) diff += 7;
+  if (diff === 0 && (dow === 6 || dow === 0)) diff = 0;
+  const out = new Date(d);
+  out.setDate(d.getDate() + diff);
+  return fmtDate(out);
+}
+function dayName(dateStr) {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return days[new Date(dateStr + 'T12:00:00').getDay()];
+}
+function fmtTime(t) {
+  const [h, m] = t.split(':');
+  const hr = parseInt(h);
+  return (hr % 12 || 12) + ':' + m + ' ' + (hr < 12 ? 'AM' : 'PM');
+}
+function fmtDateDisp(s) {
+  if (!s) return '';
+  const [y, m, d] = s.split('-');
+  const mon = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mon[parseInt(m)-1] + ' ' + parseInt(d) + ', ' + y;
+}
+</script>
+</body>
+</html>
