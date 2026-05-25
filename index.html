@@ -244,9 +244,9 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
         <div class="mcard-info"><div class="mcard-day">Saturday</div><div class="mcard-time">4:00 PM</div></div>
         <div class="mcard-chk">✓</div>
       </div>
-      <div class="mcard" id="mc-sun800"  onclick="pickMass('Sunday','8:00 AM','sun800')">
+      <div class="mcard" id="mc-sun830"  onclick="pickMass('Sunday','8:30 AM','sun830')">
         <div class="mcard-ico">🌄</div>
-        <div class="mcard-info"><div class="mcard-day">Sunday</div><div class="mcard-time">8:00 AM</div></div>
+        <div class="mcard-info"><div class="mcard-day">Sunday</div><div class="mcard-time">8:30 AM</div></div>
         <div class="mcard-chk">✓</div>
       </div>
       <div class="mcard" id="mc-sun1030" onclick="pickMass('Sunday','10:30 AM','sun1030')">
@@ -273,6 +273,22 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <button class="cbtn" onclick="adj('w-children',-1)">−</button>
       <input  class="cinp" type="number" id="w-children" min="0" placeholder="0" oninput="calcTotal('w')">
       <button class="cbtn" onclick="adj('w-children',1)">+</button>
+    </div>
+
+    <div id="w-livestream" style="display:none">
+      <label class="counter-lbl">Zoom Viewers</label>
+      <div class="counter">
+        <button class="cbtn" onclick="adj('w-zoom',-1)">−</button>
+        <input  class="cinp" type="number" id="w-zoom" min="0" placeholder="0" oninput="calcTotal('w')">
+        <button class="cbtn" onclick="adj('w-zoom',1)">+</button>
+      </div>
+
+      <label class="counter-lbl">YouTube Viewers</label>
+      <div class="counter">
+        <button class="cbtn" onclick="adj('w-youtube',-1)">−</button>
+        <input  class="cinp" type="number" id="w-youtube" min="0" placeholder="0" oninput="calcTotal('w')">
+        <button class="cbtn" onclick="adj('w-youtube',1)">+</button>
+      </div>
     </div>
 
     <div class="total">
@@ -312,6 +328,20 @@ body{font-family:'Source Sans 3',sans-serif;background:var(--bg);color:var(--tex
       <button class="cbtn" onclick="adj('sp-children',-1)">−</button>
       <input  class="cinp" type="number" id="sp-children" min="0" placeholder="0" oninput="calcTotal('sp')">
       <button class="cbtn" onclick="adj('sp-children',1)">+</button>
+    </div>
+
+    <label class="counter-lbl">Zoom Viewers</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('sp-zoom',-1)">−</button>
+      <input  class="cinp" type="number" id="sp-zoom" min="0" placeholder="0" oninput="calcTotal('sp')">
+      <button class="cbtn" onclick="adj('sp-zoom',1)">+</button>
+    </div>
+
+    <label class="counter-lbl">YouTube Viewers</label>
+    <div class="counter">
+      <button class="cbtn" onclick="adj('sp-youtube',-1)">−</button>
+      <input  class="cinp" type="number" id="sp-youtube" min="0" placeholder="0" oninput="calcTotal('sp')">
+      <button class="cbtn" onclick="adj('sp-youtube',1)">+</button>
     </div>
 
     <div class="total">
@@ -398,16 +428,16 @@ const SCRIPT = `function doPost(e) {
 
     // Create header row if sheet is empty
     if (sheet.getLastRow() === 0) {
-      sheet.appendRow(['Date','Day','Time','Mass','Adults','Children','Total','Recorded At']);
-      sheet.getRange(1,1,1,8).setFontWeight('bold').setBackground('#0f1923').setFontColor('#c9a84c');
+      sheet.appendRow(['Date','Day','Time','Mass','Adults','Children','Zoom','YouTube','Total','Recorded At']);
+      sheet.getRange(1,1,1,10).setFontWeight('bold').setBackground('#0f1923').setFontColor('#c9a84c');
       sheet.setFrozenRows(1);
     }
 
     // Insert new data at row 2 so newest is always on top
     sheet.insertRowAfter(1);
-    sheet.getRange(2,1,1,8).setValues([[
+    sheet.getRange(2,1,1,10).setValues([[
       d.date, d.day, d.time, d.massType,
-      Number(d.adults), Number(d.children), Number(d.total),
+      Number(d.adults), Number(d.children), Number(d.zoom||0), Number(d.youtube||0), Number(d.total),
       new Date().toLocaleString()
     ]]);
 
@@ -471,6 +501,14 @@ function pickMass(day, time, id) {
   selMass = { day, time };
   // Auto-set the date to the matching upcoming day
   document.getElementById('w-date').value = upcomingDate(day);
+  // Show livestream fields only for 10:30 AM Sunday
+  const showLive = (id === 'sun1030');
+  document.getElementById('w-livestream').style.display = showLive ? 'block' : 'none';
+  if (!showLive) {
+    document.getElementById('w-zoom').value = '';
+    document.getElementById('w-youtube').value = '';
+    calcTotal('w');
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -487,7 +525,9 @@ function adj(id, delta) {
 function calcTotal(pfx) {
   const a = parseInt(document.getElementById(pfx + '-adults').value)   || 0;
   const c = parseInt(document.getElementById(pfx + '-children').value) || 0;
-  document.getElementById(pfx + '-total').textContent = (a + c) || '—';
+  const z = parseInt(document.getElementById(pfx + '-zoom') ? document.getElementById(pfx + '-zoom').value : 0) || 0;
+  const y = parseInt(document.getElementById(pfx + '-youtube') ? document.getElementById(pfx + '-youtube').value : 0) || 0;
+  document.getElementById(pfx + '-total').textContent = (a + c + z + y) || '—';
 }
 
 // ─────────────────────────────────────────────
@@ -500,17 +540,21 @@ async function submitWeekend() {
 
   const adults   = parseInt(document.getElementById('w-adults').value)   || 0;
   const children = parseInt(document.getElementById('w-children').value) || 0;
+  const zoom     = parseInt(document.getElementById('w-zoom').value)     || 0;
+  const youtube  = parseInt(document.getElementById('w-youtube').value)  || 0;
 
   const rec = {
     id: Date.now(), type: 'weekend',
     date, day: selMass.day, time: selMass.time,
     massType: selMass.day + ' ' + selMass.time,
-    adults, children, total: adults + children
+    adults, children, zoom, youtube, total: adults + children + zoom + youtube
   };
   await save(rec, 'w-sbtn');
   // reset counts
   document.getElementById('w-adults').value   = '';
   document.getElementById('w-children').value = '';
+  document.getElementById('w-zoom').value     = '';
+  document.getElementById('w-youtube').value  = '';
   document.getElementById('w-total').textContent = '—';
 }
 
@@ -527,17 +571,21 @@ async function submitSpecial() {
 
   const adults   = parseInt(document.getElementById('sp-adults').value)   || 0;
   const children = parseInt(document.getElementById('sp-children').value) || 0;
+  const zoom     = parseInt(document.getElementById('sp-zoom').value)     || 0;
+  const youtube  = parseInt(document.getElementById('sp-youtube').value)  || 0;
 
   const rec = {
     id: Date.now(), type: 'special',
     date, day: dayName(date), time: fmtTime(time),
     massType: name,
-    adults, children, total: adults + children
+    adults, children, zoom, youtube, total: adults + children + zoom + youtube
   };
   await save(rec, 'sp-sbtn');
   document.getElementById('sp-name').value     = '';
   document.getElementById('sp-adults').value   = '';
   document.getElementById('sp-children').value = '';
+  document.getElementById('sp-zoom').value     = '';
+  document.getElementById('sp-youtube').value  = '';
   document.getElementById('sp-total').textContent = '—';
 }
 
@@ -613,6 +661,7 @@ function renderRecords() {
       <div class="rcard-stats">
         <div class="rstat"><div class="rstat-val">${r.adults}</div><div class="rstat-lbl">Adults</div></div>
         <div class="rstat"><div class="rstat-val">${r.children}</div><div class="rstat-lbl">Children</div></div>
+        ${(r.zoom || r.youtube) ? `<div class="rstat"><div class="rstat-val">${r.zoom||0}</div><div class="rstat-lbl">Zoom</div></div><div class="rstat"><div class="rstat-val">${r.youtube||0}</div><div class="rstat-lbl">YouTube</div></div>` : ''}
         <div class="rstat hi"><div class="rstat-val">${r.total}</div><div class="rstat-lbl">Total</div></div>
       </div>
     </div>`).join('');
